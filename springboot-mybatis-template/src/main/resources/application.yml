@@ -1,0 +1,68 @@
+# ======================== 主配置文件 ========================
+# 企业开发中通常采用多环境配置: application.yml (公共) + application-{profile}.yml (环境特定)
+# 通过 spring.profiles.active 激活对应环境
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  profiles:
+    # 激活的环境: dev / prod
+    active: dev
+
+  # ==================== Jackson 序列化 ====================
+  jackson:
+    # 日期格式化
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 时区设置
+    time-zone: Asia/Shanghai
+    # 序列化规则
+    serialization:
+      # 格式化输出 (生产环境建议关闭)
+      indent_output: false
+      # null 值不序列化
+      write-dates-as-timestamps: false
+    # 反序列化规则
+    deserialization:
+      # 忽略未知属性
+      fail-on-unknown-properties: false
+
+  # ==================== 文件上传 ====================
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+# ==================== MyBatis 配置 ====================
+mybatis:
+  # Mapper XML 文件路径
+  mapper-locations: classpath:mapper/**/*.xml
+  # 实体类别名包路径
+  type-aliases-package: com.example.template.entity
+  configuration:
+    # 驼峰命名映射: 数据库 user_name -> Java userName
+    map-underscore-to-camel-case: true
+    # 日志输出 (开发环境可用, 生产环境关闭)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# ==================== PageHelper 分页 ====================
+pagehelper:
+  helper-dialect: mysql
+  # 分页合理化: 页码 <= 0 查第一页, 页码 >= 总页数查最后一页
+  reasonable: true
+
+# ==================== Knife4j 接口文档 ====================
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    # 根日志级别
+    root: info
+    # Mapper 层日志 (开发时可设为 debug 查看 SQL)
+    com.example.template.mapper: debug
