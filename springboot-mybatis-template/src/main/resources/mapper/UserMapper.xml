@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    Mapper XML 文件规范:
+    1. namespace 必须与 Mapper 接口的全限定名一致
+    2. id 必须与 Mapper 接口的方法名一致
+    3. 参数类型使用 @Param 注解时, XML 中用注解指定的名称引用
+    4. 结果映射优先使用 resultMap, 简单查询可用 resultType
+-->
+<mapper namespace="com.example.template.mapper.UserMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+    <!--
+        resultMap 命名规范: 以实体类名 + ResultMap 命名
+        优先使用 resultMap 而非 resultType, 便于统一管理字段映射
+    -->
+    <resultMap id="UserResultMap" type="com.example.template.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="nickname" property="nickname"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="gender" property="gender"/>
+        <result column="status" property="status"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="del_flag" property="delFlag"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- ==================== 公共 SQL 片段 ==================== -->
+    <!--
+        sql 片段命名规范: 以实体类名 + Columns 命名
+        将常用字段提取为公共片段, 避免重复编写
+    -->
+    <sql id="UserColumns">
+        id, username, password, nickname, email, phone, gender, status,
+        create_by, create_time, update_by, update_time, del_flag, remark
+    </sql>
+
+    <!-- ==================== 查询条件 ==================== -->
+    <!--
+        where 条件片段命名规范: 以实体类名 + Where 命名
+        使用 <where> 标签自动处理 AND 关键字
+        使用 <if> 标签实现动态条件查询
+    -->
+    <sql id="UserWhere">
+        <where>
+            del_flag = '0'
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="nickname != null and nickname != ''">
+                AND nickname LIKE CONCAT('%', #{nickname}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone = #{phone}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==================== 根据ID查询 ==================== -->
+    <select id="selectById" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM sys_user
+        WHERE id = #{id} AND del_flag = '0'
+    </select>
+
+    <!-- ==================== 根据用户名查询 ==================== -->
+    <select id="selectByUsername" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM sys_user
+        WHERE username = #{username} AND del_flag = '0'
+    </select>
+
+    <!-- ==================== 条件查询列表 ==================== -->
+    <select id="selectList" resultMap="UserResultMap" parameterType="com.example.template.dto.UserQueryDTO">
+        SELECT <include refid="UserColumns"/>
+        FROM sys_user
+        <include refid="UserWhere"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- ==================== 新增用户 ==================== -->
+    <!--
+        使用 <trim> 标签处理插入语句中的字段和值
+        suffixOverrides 去除末尾多余的逗号
+    -->
+    <insert id="insert" parameterType="com.example.template.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="username != null and username != ''">username,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="nickname != null and nickname != ''">nickname,</if>
+            <if test="email != null and email != ''">email,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="gender != null and gender != ''">gender,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time,
+            <if test="remark != null and remark != ''">remark,</if>
+            del_flag,
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="username != null and username != ''">#{username},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="nickname != null and nickname != ''">#{nickname},</if>
+            <if test="email != null and email != ''">#{email},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="gender != null and gender != ''">#{gender},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            NOW(),
+            <if test="remark != null and remark != ''">#{remark},</if>
+            '0',
+        </trim>
+    </insert>
+
+    <!-- ==================== 根据ID更新 (选择性更新) ==================== -->
+    <!--
+        使用 <set> 标签自动处理逗号, 只更新非null字段
+        企业开发中推荐选择性更新, 避免覆盖已有数据
+    -->
+    <update id="updateById" parameterType="com.example.template.entity.User">
+        UPDATE sys_user
+        <set>
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="nickname != null and nickname != ''">nickname = #{nickname},</if>
+            <if test="email != null and email != ''">email = #{email},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="gender != null and gender != ''">gender = #{gender},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = NOW(),
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND del_flag = '0'
+    </update>
+
+    <!-- ==================== 逻辑删除 ==================== -->
+    <!--
+        逻辑删除: 将 del_flag 设为 '1', 而非物理删除数据
+        企业开发中核心业务表必须使用逻辑删除, 保留数据可追溯
+    -->
+    <update id="deleteById">
+        UPDATE sys_user SET del_flag = '1', update_time = NOW()
+        WHERE id = #{id} AND del_flag = '0'
+    </update>
+
+    <!-- ==================== 批量逻辑删除 ==================== -->
+    <update id="deleteBatchIds">
+        UPDATE sys_user SET del_flag = '1', update_time = NOW()
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND del_flag = '0'
+    </update>
+
+</mapper>
